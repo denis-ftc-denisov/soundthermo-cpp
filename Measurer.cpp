@@ -9,6 +9,7 @@
 #include <qendian.h>
 
 #include <vector>
+#include <unistd.h>
 
 using namespace std;
 
@@ -49,6 +50,7 @@ float Measurer::Measure(float duration)
 	{
 		QCoreApplication::processEvents();
 		input_buffer += reading_device->readAll();
+		usleep(20000);
 	}
 	audio_input->stop();
 	audio_output->stop();
