@@ -98,9 +98,23 @@ int main(int argc, char *argv[])
 		parser.addOption(output_option);
 		parser.addOption(duration_option);
 		parser.process(a);
+		if (!parser.isSet(input_option))
+		{
+			cerr << "You should specify -i (--input)\n";
+			return 1;
+		}
+		if (!parser.isSet(output_option))
+		{
+			cerr << "You should specify -o (--output)\n";
+			return 1;
+		}
 		QString input_device_name = parser.value(input_option);
 		QString output_device_name = parser.value(output_option);
-		float duration = parser.value(duration_option).toFloat();
+		float duration = 1;
+		if (parser.isSet(duration_option)) 
+		{
+			duration = parser.value(duration_option).toFloat();
+		}
 		Measure(input_device_name, output_device_name, duration);
 		return 0;
 	}
