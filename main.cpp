@@ -49,19 +49,27 @@ QAudioDeviceInfo GetOutputDevice(QString name)
 	throw (string)("Unable to find device " + name.toStdString());
 }
 
-void Measure(QString input_device_name, QString output_device_name, float duration)
+void Measure(QString input_device_name, QString output_device_name, float duration, bool debug)
 {
 	auto input = GetInputDevice(input_device_name);
 	auto output = GetOutputDevice(output_device_name);
-	Measurer left(input, output, MeasureChannel::Left);
+	Measurer left(input, output, MeasureChannel::Left, debug);
 	float left_result = left.Measure(duration);
-	Measurer right(input, output, MeasureChannel::Right);
+	Measurer right(input, output, MeasureChannel::Right, debug);
 	float right_result = right.Measure(duration);
+	if (debug)
+	{
+		cerr << "Measure complete, left_result = " << left_result << " right_result = " << right_result << "\n";
+	}
 	float k = 2 * right_result;
 	float v0v = left_result / k;
 	// assume r2 = 10K
 	float r1 = 10000 / v0v - 10000;
 	float t = 1.0 / (log(r1 / 10000) / 4300 + 1 / 298.0) - 273.0;
+	if (debug)
+	{
+	  cerr << "v0v = " << v0v << " r1 = " << r1 << " t = " << t << "\n";
+	}
 	cout.setf(ios::fixed | ios::showpoint);
 	cout.precision(4);
 	cout << t << "\n";
@@ -94,9 +102,11 @@ int main(int argc, char *argv[])
 		QCommandLineOption input_option(QStringList() << "i" << "input", "Name of device to receive input from", "input");
 		QCommandLineOption output_option(QStringList() << "o" << "output", "Name of device to send output to", "output");
 		QCommandLineOption duration_option(QStringList() << "d" << "duration", "How many seconds to record (uses twice this time)", "duration");
+		QCommandLineOption debug_option("debug", "Turn on additional logging");
 		parser.addOption(input_option);
 		parser.addOption(output_option);
 		parser.addOption(duration_option);
+		parser.addOption(debug_option);
 		parser.process(a);
 		if (!parser.isSet(input_option))
 		{
@@ -115,7 +125,9 @@ int main(int argc, char *argv[])
 		{
 			duration = parser.value(duration_option).toFloat();
 		}
-		Measure(input_device_name, output_device_name, duration);
+		bool debug = false;
+		if (parser.isSet(debug_option)) debug = true;
+		Measure(input_device_name, output_device_name, duration, debug);
 		return 0;
 	}
 	else
@@ -123,5 +135,5 @@ int main(int argc, char *argv[])
 		parser.process(a);
 		parser.showHelp(0);
 	}
-	return a.exec();
+	return 0;
 }

@@ -9,12 +9,14 @@
 #include <qendian.h>
 
 #include <vector>
+#include <iostream>
+#include <sstream>
 #include <unistd.h>
 
 using namespace std;
 
-Measurer::Measurer(QAudioDeviceInfo input, QAudioDeviceInfo output, MeasureChannel channel)
-    : input(input), output(output), channel(channel)
+Measurer::Measurer(QAudioDeviceInfo input, QAudioDeviceInfo output, MeasureChannel channel, bool debug)
+    : input(input), output(output), channel(channel), debug(debug)
 {
 }
 
@@ -72,6 +74,15 @@ float Measurer::ProcessData(QByteArray data)
 		int t = qFromLittleEndian<qint16>(data.data() + i);
 		samples.push_back(t / 32767.0);
 	}
+	if (debug)
+	{
+		ostringstream oss;
+		for (int i = 0; i < (int)samples.size(); i++)
+		{
+			oss << samples[i] << " ";
+		}
+		cerr << "Samples read: " << oss.str() << "\n";
+	}
 	// cut off starting and ending silence
 	int left_pos = 0;
 	while (left_pos < (int)samples.size() && abs(samples[left_pos]) < 1e-4) left_pos++;
@@ -102,6 +113,11 @@ float Measurer::ProcessData(QByteArray data)
 		}
 	}
 	float desired = TONE_FREQUENCY * pow / SAMPLE_RATE;
+	if (debug)
+	{
+		cerr << "Measure: desired = " << desired << " argmax = " << argmax << " max = " 
+		     << max << " left_pos = " << left_pos << " right_pos = " << right_pos << "\n";
+	}
 	if (abs(desired - argmax) < 1e-3)
 	{
 		return max / pow;
