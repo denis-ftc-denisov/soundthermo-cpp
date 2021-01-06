@@ -16,10 +16,11 @@ class Measurer
 
 	MeasureChannel channel;
 	QAudioDeviceInfo input, output;
+	bool debug;
 
 	float ProcessData(QByteArray data);
 public:
-	Measurer(QAudioDeviceInfo input, QAudioDeviceInfo output, MeasureChannel channel);
+	Measurer(QAudioDeviceInfo input, QAudioDeviceInfo output, MeasureChannel channel, bool debug);
 	float Measure(float duration);
 };
 
