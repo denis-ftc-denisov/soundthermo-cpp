@@ -37,3 +37,8 @@ really equation is like `Vout = R2 * Vin * k / (R1 + R2)`. So firstly we do meas
 channel (where we know both `R1` and `R2`), to determine `k`. After that we repeat same measurement
 using left channel. Knowing `Vin`, `Vout`, `R2`, and `k` we can determine value of thermistor. 
 After that we compute real temperature via approximation formula.
+
+# Notes
+
+For Linux users if you're running this from root user, you will need to have Pulseaudio started 
+system-wide. In OpenSuSE this is done via installing package `pulseaudio-system-wide`.
