@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <unistd.h>
 
 #include "Measurer.h"
 
@@ -55,6 +56,7 @@ void Measure(QString input_device_name, QString output_device_name, float durati
 	auto output = GetOutputDevice(output_device_name);
 	Measurer left(input, output, MeasureChannel::Left, debug);
 	float left_result = left.Measure(duration);
+	//usleep(duration * 1000000);
 	Measurer right(input, output, MeasureChannel::Right, debug);
 	float right_result = right.Measure(duration);
 	if (debug)

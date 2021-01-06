@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         Generator.cpp \
         Measurer.cpp \
+        fft.cpp \
         main.cpp
 
 # Default rules for deployment.

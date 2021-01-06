@@ -67,21 +67,28 @@ float Measurer::Measure(float duration)
 float Measurer::ProcessData(QByteArray data)
 {
 	// convert byte data to sample array
-	vector<float> samples;
+	vector<float> read_samples;
 	// note that we fixed format to be little-endian, two-byte, signed
 	for (int i = 0; i < data.count(); i += 2)
 	{
 		int t = qFromLittleEndian<qint16>(data.data() + i);
-		samples.push_back(t / 32767.0);
+		read_samples.push_back(t / 32767.0);
 	}
 	if (debug)
 	{
 		ostringstream oss;
-		for (int i = 0; i < (int)samples.size(); i++)
+		for (int i = 0; i < (int)read_samples.size(); i++)
 		{
-			oss << samples[i] << " ";
+			oss << read_samples[i] << " ";
 		}
 		cerr << "Samples read: " << oss.str() << "\n";
+	}
+	// cut off some initial samples because of delays in sound subsystem 
+	// (otherwise we can hear some older sound which is not finished playing yet)
+	vector<float> samples;
+	for (int i = (int)(read_samples.size() * INITIAL_DELAY_PERCENTAGE); i < (int)read_samples.size(); i++)
+	{
+		samples.push_back(read_samples[i]);
 	}
 	// determine silence threshold (will consider signal less than SILENCE of maximum as silence)
 	float max_sample = abs(samples[0]);
@@ -109,6 +116,11 @@ float Measurer::ProcessData(QByteArray data)
 		d[i] = Complex(samples[left_pos + i], 0);
 	}
 	FFT(d, pow, false);
+	return ProcessSpectrum (pow, d);
+}
+
+float Measurer::ProcessSpectrum(int pow, Complex *d)
+{
 	if (debug)
 	{
 		ostringstream oss;
@@ -119,24 +131,30 @@ float Measurer::ProcessData(QByteArray data)
 		}
 		cerr << "Spectrum: " << oss.str() << "\n";
 	}
+	// will search for maximum value near our frequency
+	// also will 
+	float desired = TONE_FREQUENCY * pow / SAMPLE_RATE;
+	int find_left = (int)((TONE_FREQUENCY - FREQUENCY_GAP) * pow / SAMPLE_RATE);
+	if (find_left < 0) find_left = 0;
+	int find_right = (int)((TONE_FREQUENCY + FREQUENCY_GAP) * pow / SAMPLE_RATE);
+	if (find_right > pow) find_right = pow;
 	float max = -1;
-	int argmax = 0;
-	for (int i = 0; i < pow; i++)
+	float avg = 0;
+	for (int i = find_left; i < find_right; i++)
 	{
 		float amp = (float)sqrt(d[i].real() * d[i].real() + d[i].imag() * d[i].imag());
 		if (amp > max)
 		{
 			max = amp;
-			argmax = i;
 		}
+		avg += amp;
 	}
-	float desired = TONE_FREQUENCY * pow / SAMPLE_RATE;
+	avg /= (find_right - find_left);
 	if (debug)
 	{
-		cerr << "Measure: desired = " << desired << " argmax = " << argmax << " max = " 
-		     << max << " left_pos = " << left_pos << " right_pos = " << right_pos << "\n";
+		cerr << "ProcessSpectrum: desired = " << desired << " avg = " << avg << " max = " << max << "\n";
 	}
-	if (abs(desired - argmax) < 1e-3)
+	if (abs(max / avg) - 1 > PEAK_LEVEL)
 	{
 		return max / pow;
 	}
