@@ -14,7 +14,7 @@ enum MeasureChannel
 class Measurer
 {
 	// frequency for generating tone
-	const int TONE_FREQUENCY = 6000;
+	const int TONE_FREQUENCY = 1000;
 	// frequency window width to search for resulting tone 
 	const int FREQUENCY_GAP = 100;
 	// our resulting amplitude should differ at least this times from average
