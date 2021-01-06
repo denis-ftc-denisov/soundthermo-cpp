@@ -13,6 +13,7 @@ class Measurer
 {
 	const int TONE_FREQUENCY = 6000;
 	const int SAMPLE_RATE = 44100;
+	const float SILENCE_LEVEL = 0.3;
 
 	MeasureChannel channel;
 	QAudioDeviceInfo input, output;

@@ -83,11 +83,19 @@ float Measurer::ProcessData(QByteArray data)
 		}
 		cerr << "Samples read: " << oss.str() << "\n";
 	}
+	// determine silence threshold (will consider signal less than SILENCE of maximum as silence)
+	float max_sample = abs(samples[0]);
+	for (int i = 1; i < (int)samples.size(); i++)
+	{
+		float q = abs(samples[i]);
+		if (q > max_sample) max_sample = q;
+	}
+	float silence_level = SILENCE_LEVEL * max_sample;
 	// cut off starting and ending silence
 	int left_pos = 0;
-	while (left_pos < (int)samples.size() && abs(samples[left_pos]) < 1e-4) left_pos++;
+	while (left_pos < (int)samples.size() && abs(samples[left_pos]) < silence_level) left_pos++;
 	int right_pos = (int)samples.size() - 1;
-	while (right_pos >= 0 && abs(samples[right_pos]) < 1e-4) right_pos--;
+	while (right_pos >= 0 && abs(samples[right_pos]) < silence_level) right_pos--;
 	int len = right_pos - left_pos + 1;
 	int pow = 1, m = 0;
 	while (2 * pow <= len)
@@ -101,6 +109,16 @@ float Measurer::ProcessData(QByteArray data)
 		d[i] = Complex(samples[left_pos + i], 0);
 	}
 	FFT(d, pow, false);
+	if (debug)
+	{
+		ostringstream oss;
+		for (int i = 0; i < pow; i++)
+		{
+			float amp = (float)sqrt(d[i].real() * d[i].real() + d[i].imag() * d[i].imag());
+			oss << amp << " ";
+		}
+		cerr << "Spectrum: " << oss.str() << "\n";
+	}
 	float max = -1;
 	int argmax = 0;
 	for (int i = 0; i < pow; i++)
